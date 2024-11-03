@@ -1,0 +1,17 @@
+# ignore python cache files
+__pycache__/
+.pytest_cache/
+# ignore virtualenv
+venv/
+
+# ignore vscode settings
+.vscode/
+
+# ignore python bytecode
+*.pyc
+
+# ignore logs
+*.log
+
+# ignore sandbox
+sandbox/

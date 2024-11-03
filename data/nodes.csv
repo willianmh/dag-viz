@@ -1,0 +1,11 @@
+id,node_type,parent,location
+A,measure,measures,pq-dataset
+B,measure,measures,pq-dataset
+C,visual,page1,division
+D,visual,page1,division
+E,measure,measures,pq-dataset
+F,measure,measures,pq-dataset
+G,measure,measures,pq-dataset
+H,visual,page1,division
+I,visual,page1,week-to-week
+J,visual,page1,week-to-week
