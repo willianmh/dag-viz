@@ -13,10 +13,12 @@ from components.graph import Graph
 def update_related_elements(selected_locations, elements):
     if not selected_locations:
         return elements
-    
+
     _elements = Elements(elements=elements)
 
     g = Graph.from_elements(_elements)
-    new_elements = g.select_related_elements(selected_locations).model_dump()["elements"]
+    new_elements = g.select_related_elements(selected_locations).model_dump()[
+        "elements"
+    ]
 
     return new_elements

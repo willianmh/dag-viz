@@ -4,8 +4,8 @@ default_stylesheet = [
         "style": {
             "label": "data(label)",
             "content": "data(label)",
-            "width": 'label',
-            "height": 'label',
+            "width": "label",
+            "height": "label",
             "color": "#fff",
             "text-valign": "center",
             "text-halign": "center",

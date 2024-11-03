@@ -19,7 +19,6 @@ def get_filter_pane():
                     html.H2("Graph Explorer"),
                     html.Hr(),
                     html.P("Explore the graph by filtering nodes", className="lead"),
-                    
                     html.Div(
                         [
                             html.Label("Group Measures:"),
@@ -114,7 +113,7 @@ def serve_layout():
 
     return html.Div(
         [
-            dcc.Store(id="elements", data=elements, storage_type="memory"),        
+            dcc.Store(id="elements", data=elements, storage_type="memory"),
             dcc.Store(id="selected-node", data=None, storage_type="memory"),
             dbc.Row(
                 [

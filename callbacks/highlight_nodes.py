@@ -11,7 +11,7 @@ from components.graph import Graph
     Input("cytoscape", "tapNodeData"),
     Input("elements", "data"),
     State("selected-node", "data"),
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
 def highlight_paths(node_data, elements, selected_node):
     if not node_data:

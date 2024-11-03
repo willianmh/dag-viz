@@ -22,7 +22,7 @@ def group_nodes(group_measures, group_visuals, elements):
     if group_measures:
         group_by_measures = group_measures
         node_type = "measure"
-        
+
         new_elements = g.group_by(group_by=group_by_measures, node_type=node_type)
         g = Graph.from_elements(new_elements)
 
