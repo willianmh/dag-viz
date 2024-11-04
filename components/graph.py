@@ -1,3 +1,4 @@
+from typing import Self
 import networkx as nx
 import pandas as pd
 import plotly.express as px
@@ -6,31 +7,44 @@ from components.cytoscape import Edge, Elements, Node
 
 
 class Graph:
-    def __init__(self, nodes, edges):
+    def __init__(self, nodes: pd.DataFrame, edges: pd.DataFrame):
         self.nodes: pd.DataFrame = nodes
         self.edges: pd.DataFrame = edges
 
-        self._g = nx.from_pandas_edgelist(
-            edges, "source", "target", create_using=nx.DiGraph()
+        self.g = None
+        self.complete_paths = []
+        self.mapping_node_to_path = {}
+        self._colors = {}
+        self._calculate_graph_properties()
+
+    def _calculate_graph_properties(self):
+        self.g = nx.from_pandas_edgelist(
+            self.edges, "source", "target", create_using=nx.DiGraph()
         )
+        #remove the is_leaf and is_root columns if they exist
+        if "is_leaf" in self.nodes.columns:
+            self.nodes.drop(columns=["is_leaf"], inplace=True)
+        if "is_root" in self.nodes.columns:
+            self.nodes.drop(columns=["is_root"], inplace=True)
 
         self.nodes["is_leaf"] = self.nodes["id"].apply(
-            lambda x: len(list(self._g.successors(x))) == 0
+            lambda x: len(list(self.g.successors(x))) == 0
         )
         self.nodes["is_root"] = self.nodes["id"].apply(
-            lambda x: len(list(self._g.predecessors(x))) == 0
+            lambda x: len(list(self.g.predecessors(x))) == 0
         )
 
         self.edges["id"] = self.edges.apply(
             lambda x: f"{x['source']}->{x['target']}", axis=1
         )
 
-        # iterate over the nodes and add the attributes to the graph
-        for node, attrs in self._g.nodes(data=True):
-            attrs.update(nodes[nodes["id"] == node].squeeze().to_dict())
 
-        self._paths = self._compute_complete_paths()
-        self._node_to_paths = self._map_node_to_paths()
+        # iterate over the nodes and add the attributes to the graph
+        for node, attrs in self.g.nodes(data=True):
+            attrs.update(self.nodes[self.nodes["id"] == node].squeeze().to_dict())
+
+        self.complete_paths = self.compute_complete_paths()
+        self.mapping_node_to_path = self.map_node_to_paths()
 
         self._colors = self._index_colors(self.nodes)
 
@@ -53,13 +67,8 @@ class Graph:
 
         return cls(nodes, edges)
 
-    def _index_colors(self, nodes: pd.DataFrame):
-        color_map = px.colors.qualitative.Plotly
-        node_types = nodes["node_type"].unique()
-
-        return dict(zip(node_types, color_map[: len(node_types)]))
-
-    def _compute_complete_paths(self) -> list:
+    def compute_complete_paths(self) -> list:
+        # TODO: receive only g as argument, nodes can be accessed from g.nodes()
         complete_paths = []
         _roots = self.nodes[self.nodes["is_root"]]["id"]
         _leaves = self.nodes[self.nodes["is_leaf"]]["id"]
@@ -69,7 +78,7 @@ class Graph:
                 if root != leaf:
                     try:
                         paths = list(
-                            nx.all_simple_paths(self._g, source=root, target=leaf)
+                            nx.all_simple_paths(self.g, source=root, target=leaf)
                         )
                         complete_paths.extend(paths)
                     except nx.NetworkXNoPath:
@@ -77,11 +86,29 @@ class Graph:
 
         return complete_paths
 
-    def _map_node_to_paths(self) -> dict:
+    def map_node_to_paths(self) -> dict:
         node_to_paths = {}
-        for node in self._g.nodes():
-            node_to_paths[node] = [path for path in self._paths if node in path]
+        for node in self.nodes["id"]:
+            node_to_paths[node] = [path for path in self.complete_paths if node in path]
         return node_to_paths
+    
+    def _modify_graph(func):
+        """
+        Decorator to wrap methods that modify the graph, ensuring properties are recalculated.
+        """
+        def wrapper(self, *args, **kwargs):
+            result = func(self, *args, **kwargs)
+            # Only recalculate if the modification is performed on the current instance
+            if not kwargs.get('copy', False):
+                self._calculate_graph_properties()
+            return result
+        return wrapper
+
+    def _index_colors(self, nodes: pd.DataFrame) -> dict:
+        color_map = px.colors.qualitative.Plotly
+        node_types = nodes["node_type"].unique()
+
+        return dict(zip(node_types, color_map[: len(node_types)]))
 
     def _export_elements(self, nodes: pd.DataFrame, edges: pd.DataFrame) -> Elements:
         return Elements.from_dataframe(nodes, edges)
@@ -124,7 +151,8 @@ class Graph:
 
         return self._export_elements(filtered_nodes, filtered_edges)
 
-    def select_related_elements(self, selected_locations) -> Elements:
+    @_modify_graph
+    def select_related_elements(self, selected_locations: list, copy=False) -> Self:
         filtered_nodes = self.nodes[
             [
                 node["location"] in selected_locations
@@ -138,7 +166,7 @@ class Graph:
 
         # Find all paths that include the selected node
         for node_id in filtered_nodes["id"]:
-            paths = self._node_to_paths.get(node_id, [])
+            paths = self.mapping_node_to_path.get(node_id, [])
 
             for path in paths:
                 nodes_to_filtered.update(path)
@@ -146,17 +174,28 @@ class Graph:
                 edges_to_filtered.update(edges_in_path)
 
         related_nodes = self.nodes[self.nodes["id"].isin(nodes_to_filtered)]
+        related_nodes = related_nodes.copy()
 
         related_edges = self.edges[
             self.edges["source"].isin(nodes_to_filtered)
             & self.edges["target"].isin(nodes_to_filtered)
         ]
+        related_edges = related_edges.copy()
 
-        _nodes = self._transform_nodes(related_nodes)
-        _edges = self._transform_edges(related_edges)
-        return self._export_elements(_nodes, _edges)
+        if copy:
+            # Return a new instance of Graph with updated nodes
+            # new_graph = Graph(nodes=related_nodes[["id", "label", "node_type", "parent", "location"]], edges=related_edges)
+            new_graph = Graph(related_nodes, related_edges)
+            return new_graph
+        else:
+            # Modify the current instance
+            self.nodes = related_nodes
+            self.edges = related_edges
+            # Note: Edges might need re-evaluation depending on how grouping affects connectivity
+        return None
 
-    def group_by(self, group_by: str, node_type: str) -> dict:
+    @_modify_graph
+    def group_by(self, group_by: str, node_type: str, copy=False) -> dict:
         # transform nodes to group_by if node_type is met
         _grouped_nodes = self.nodes.copy()
         _grouped_nodes["id"] = _grouped_nodes[group_by].where(
@@ -165,6 +204,7 @@ class Graph:
 
         # remove duplicates
         _grouped_nodes = _grouped_nodes.drop_duplicates(subset=["id"])
+        _grouped_nodes = _grouped_nodes.copy()
 
         # transform nodes in edges to group_by if node_type is met
         _grouped_edges = self.edges.copy()
@@ -193,7 +233,16 @@ class Graph:
         _grouped_edges = _grouped_edges[
             _grouped_edges["source"] != _grouped_edges["target"]
         ]
+        _grouped_edges = _grouped_edges.copy()
+        
 
-        _nodes = self._transform_nodes(_grouped_nodes)
-        _edges = self._transform_edges(_grouped_edges)
-        return self._export_elements(_nodes, _edges)
+        if copy:
+            # Return a new instance of Graph with updated nodes
+            new_graph = Graph(nodes=_grouped_nodes, edges=_grouped_edges)
+            return new_graph
+        else:
+            # Modify the current instance
+            self.nodes = _grouped_nodes
+            self.edges = _grouped_edges
+            # Note: Edges might need re-evaluation depending on how grouping affects connectivity
+        return None

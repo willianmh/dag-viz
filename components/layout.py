@@ -33,8 +33,12 @@ def get_filter_pane():
                                         "label": "by Table",
                                         "value": "parent",
                                     },
+                                    {
+                                        "label": "by Measure",
+                                        "value": "default",
+                                    }
                                 ],
-                                # value=selection,
+                                value="default",
                                 inline=True,
                             ),
                         ]
@@ -53,8 +57,12 @@ def get_filter_pane():
                                         "label": "by Page",
                                         "value": "parent",
                                     },
+                                    {
+                                        "label": "by Visual",
+                                        "value": "default",
+                                    }
                                 ],
-                                # value=locations,
+                                value="default",
                                 inline=True,
                             ),
                         ]
@@ -77,7 +85,6 @@ def get_filter_pane():
                                             {"label": t.title(), "value": t}
                                             for t in types
                                         ],
-                                        value=types,
                                         inline=True,
                                     ),
                                 ]
@@ -91,7 +98,6 @@ def get_filter_pane():
                                             {"label": loc, "value": loc}
                                             for loc in locations
                                         ],
-                                        value=locations,
                                         inline=True,
                                     ),
                                 ]
@@ -113,6 +119,7 @@ def serve_layout():
 
     return html.Div(
         [
+            dcc.Store(id="initial-data", data=elements, storage_type="memory"),
             dcc.Store(id="elements", data=elements, storage_type="memory"),
             dcc.Store(id="selected-node", data=None, storage_type="memory"),
             dbc.Row(

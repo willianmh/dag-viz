@@ -9,7 +9,9 @@ def test_nodes_from_dataframe():
         "label": ["Node 1", "Node 2"],
         "node_type": ["Type 1", "Type 2"],
         "location": ["Location 1", "Location 2"],
+        "parent": ["Parent 1", "Parent 2"],  # Add this line
     }
+
     nodes_df = pd.DataFrame(nodes_data)
     nodes = Elements.nodes_from_dataframe(nodes_df)
 
@@ -40,6 +42,7 @@ def test_from_dataframe():
         "label": ["Node 1", "Node 2"],
         "node_type": ["Type 1", "Type 2"],
         "location": ["Location 1", "Location 2"],
+        "parent": ["Parent 1", "Parent 2"],  # Add this line
     }
     edges_data = {"id": ["1", "2"], "source": ["1", "2"], "target": ["2", "3"]}
     nodes_df = pd.DataFrame(nodes_data)

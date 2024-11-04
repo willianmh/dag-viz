@@ -29,7 +29,7 @@ def highlight_paths(node_data, elements, selected_node):
     node_id = node_data["id"]
 
     # Find all paths that include the selected node
-    paths = g._node_to_paths.get(node_id, [])
+    paths = g.mapping_node_to_path.get(node_id, [])
 
     # Get the list of nodes and edges to highlight
     nodes_to_highlight = set()
