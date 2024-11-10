@@ -1,11 +1,12 @@
-id,node_type,parent,location
-A,measure,measures,pq-dataset
-B,measure,measures,pq-dataset
-C,visual,page1,division
-D,visual,page1,division
-E,measure,measures,pq-dataset
-F,measure,measures,pq-dataset
-G,measure,measures,pq-dataset
-H,visual,page1,division
-I,visual,page1,week-to-week
-J,visual,page1,week-to-week
+id,label,node_type,source,source_label,location,location_label,workspace,workspace_label
+A,A,measure,measures123,measures,pq-dataset123,pq-dataset,pq-factory123,pq-factory
+B,B,measure,measures123,measures,pq-dataset123,pq-dataset,pq-factory123,pq-factory
+C,C,visual,page123,page 1,division123,division,pqs123,pqs
+D,D,visual,page123,page 1,division123,division,pqs123,pqs
+E,E,measure,measures123,measures,pq-dataset123,pq-dataset,pq-factory123,pq-factory
+F,F,measure,measures1234,custom,pq-dataset123,pq-dataset,pq-factory123,pq-factory
+G,G,measure,measures1234,custom,pq-dataset123,pq-dataset,pq-factory123,pq-factory
+H,H,visual,page123,page 1,division123,division,pqs123,pqs
+I,I,visual,page1234-week-to-week,page 1,week-to-week123,week-to-week,pqs123,pqs
+J,J,visual,page1234-week-to-week,page 1,week-to-week123,week-to-week,pqs123,pqs
+K,K,visual,page1235,page 1,management123,management view,pqt123,pqt
