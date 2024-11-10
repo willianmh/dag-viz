@@ -3,13 +3,22 @@ import networkx as nx
 import pandas as pd
 import plotly.express as px
 
-from components.cytoscape import Edge, Elements, Node
+from components.cytoscape import Edge, Elements, Group, Node, SubGroup
 
 
 class Graph:
-    def __init__(self, nodes: pd.DataFrame, edges: pd.DataFrame):
+    def __init__(
+        self,
+        nodes: pd.DataFrame,
+        edges: pd.DataFrame,
+        groups: pd.DataFrame = None,
+        subgroups: pd.DataFrame = None,
+    ):
         self.nodes: pd.DataFrame = nodes
         self.edges: pd.DataFrame = edges
+
+        self.groups = groups
+        self.subgroups = subgroups
 
         self.g = None
         self.complete_paths = []
@@ -21,7 +30,7 @@ class Graph:
         self.g = nx.from_pandas_edgelist(
             self.edges, "source", "target", create_using=nx.DiGraph()
         )
-        #remove the is_leaf and is_root columns if they exist
+        # remove the is_leaf and is_root columns if they exist
         if "is_leaf" in self.nodes.columns:
             self.nodes.drop(columns=["is_leaf"], inplace=True)
         if "is_root" in self.nodes.columns:
@@ -38,7 +47,6 @@ class Graph:
             lambda x: f"{x['source']}->{x['target']}", axis=1
         )
 
-
         # iterate over the nodes and add the attributes to the graph
         for node, attrs in self.g.nodes(data=True):
             attrs.update(self.nodes[self.nodes["id"] == node].squeeze().to_dict())
@@ -50,6 +58,20 @@ class Graph:
 
     @classmethod
     def from_elements(cls, elements: Elements):
+        groups = pd.DataFrame(
+            [
+                group.data.model_dump()
+                for group in elements.elements
+                if isinstance(group.data, Group)
+            ]
+        )
+        subgroups = pd.DataFrame(
+            [
+                subgroup.data.model_dump()
+                for subgroup in elements.elements
+                if isinstance(subgroup.data, SubGroup)
+            ]
+        )
         nodes = pd.DataFrame(
             [
                 node.data.model_dump()
@@ -65,7 +87,7 @@ class Graph:
             ]
         )
 
-        return cls(nodes, edges)
+        return cls(nodes, edges, groups, subgroups)
 
     def compute_complete_paths(self) -> list:
         # TODO: receive only g as argument, nodes can be accessed from g.nodes()
@@ -91,17 +113,19 @@ class Graph:
         for node in self.nodes["id"]:
             node_to_paths[node] = [path for path in self.complete_paths if node in path]
         return node_to_paths
-    
+
     def _modify_graph(func):
         """
         Decorator to wrap methods that modify the graph, ensuring properties are recalculated.
         """
+
         def wrapper(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
             # Only recalculate if the modification is performed on the current instance
-            if not kwargs.get('copy', False):
+            if not kwargs.get("copy", False):
                 self._calculate_graph_properties()
             return result
+
         return wrapper
 
     def _index_colors(self, nodes: pd.DataFrame) -> dict:
@@ -114,19 +138,10 @@ class Graph:
         return Elements.from_dataframe(nodes, edges)
 
     def _transform_nodes(self, nodes: pd.DataFrame) -> pd.DataFrame:
-        _nodes = nodes.copy()
-        _nodes["label"] = _nodes["id"]
-        _nodes["node_type"] = _nodes["node_type"]
-        _nodes["parent"] = _nodes["parent"]
-        _nodes["location"] = _nodes["location"]
-        return _nodes[["id", "label", "node_type", "parent", "location"]]
+        return Node.node_validator(nodes).copy()
 
     def _transform_edges(self, edges: pd.DataFrame) -> pd.DataFrame:
-        _edges = edges.copy()
-        _edges["id"] = _edges["source"] + "->" + _edges["target"]
-        _edges["source"] = _edges["source"]
-        _edges["target"] = _edges["target"]
-        return _edges[["id", "source", "target"]]
+        return Edge.edge_validator(edges).copy()
 
     def export_elements(self) -> Elements:
         _nodes = self._transform_nodes(self.nodes)
@@ -184,7 +199,7 @@ class Graph:
 
         if copy:
             # Return a new instance of Graph with updated nodes
-            # new_graph = Graph(nodes=related_nodes[["id", "label", "node_type", "parent", "location"]], edges=related_edges)
+            # new_graph = Graph(nodes=related_nodes[["id", "label", "node_type", "source", "location"]], edges=related_edges)
             new_graph = Graph(related_nodes, related_edges)
             return new_graph
         else:
@@ -200,6 +215,9 @@ class Graph:
         _grouped_nodes = self.nodes.copy()
         _grouped_nodes["id"] = _grouped_nodes[group_by].where(
             _grouped_nodes["node_type"] == node_type, _grouped_nodes["id"]
+        )
+        _grouped_nodes["label"] = _grouped_nodes[f"{group_by}_label"].where(
+            _grouped_nodes["node_type"] == node_type, _grouped_nodes["label"]
         )
 
         # remove duplicates
@@ -234,7 +252,6 @@ class Graph:
             _grouped_edges["source"] != _grouped_edges["target"]
         ]
         _grouped_edges = _grouped_edges.copy()
-        
 
         if copy:
             # Return a new instance of Graph with updated nodes

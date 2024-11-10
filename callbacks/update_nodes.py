@@ -14,14 +14,13 @@ from services.data_loader import load_data
     Input("initial-data", "data"),
     prevent_initial_call=True,
 )
-def group_nodes(group_measures, group_visuals, selected_locations,elements):
+def group_nodes(group_measures, group_visuals, selected_locations, elements):
     # load the data
     _elements = Elements(elements=elements)
     g = Graph.from_elements(_elements)
 
     if selected_locations:
         g.select_related_elements(selected_locations, copy=False)
-        
 
     if group_measures:
         group_by_measures = group_measures
@@ -32,7 +31,7 @@ def group_nodes(group_measures, group_visuals, selected_locations,elements):
     if group_visuals:
         group_by_visuals = group_visuals
         node_type = "visual"
-        
+
         if not group_by_visuals == "default":
             g.group_by(group_by=group_by_visuals, node_type=node_type, copy=False)
 

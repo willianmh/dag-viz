@@ -31,12 +31,12 @@ def get_filter_pane():
                                     },
                                     {
                                         "label": "by Table",
-                                        "value": "parent",
+                                        "value": "source",
                                     },
                                     {
                                         "label": "by Measure",
                                         "value": "default",
-                                    }
+                                    },
                                 ],
                                 value="default",
                                 inline=True,
@@ -55,12 +55,12 @@ def get_filter_pane():
                                     },
                                     {
                                         "label": "by Page",
-                                        "value": "parent",
+                                        "value": "source",
                                     },
                                     {
                                         "label": "by Visual",
                                         "value": "default",
-                                    }
+                                    },
                                 ],
                                 value="default",
                                 inline=True,
