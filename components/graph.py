@@ -313,6 +313,10 @@ class Graph:
         # remove extra clusters
         clusters = self.clusters
         clusters.pop(group_by)
+        if group_by == "dataset":
+            clusters.pop("table")
+        if group_by == "report":
+            clusters.pop("page")
 
         if copy:
             # Return a new instance of Graph with updated nodes
