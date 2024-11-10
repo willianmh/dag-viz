@@ -23,8 +23,9 @@ def highlight_paths(node_data, elements, selected_node):
             return default_stylesheet, None
 
     _elements = Elements(elements=elements)
-
     g = Graph.from_elements(_elements)
+    # _model = Nodes(**model)
+    # g = Graph.from_model(_model)
 
     node_id = node_data["id"]
 

@@ -3,6 +3,8 @@ import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
 
 from assets.stylesheet import default_stylesheet, SIDEBAR_STYLE
+from components.cytoscape import Elements
+from components.nodes_model import Nodes
 from services.data_loader import load_data
 
 cyto.load_extra_layouts()
@@ -11,7 +13,7 @@ cyto.load_extra_layouts()
 def get_filter_pane():
     initial_data = load_data()
     types = initial_data["types"]
-    locations = initial_data["locations"]
+    tables = initial_data["tables"]
     return html.Div(
         [
             html.Div(
@@ -27,11 +29,11 @@ def get_filter_pane():
                                 options=[
                                     {
                                         "label": "by Dataset",
-                                        "value": "location",
+                                        "value": "dataset",
                                     },
                                     {
                                         "label": "by Table",
-                                        "value": "source",
+                                        "value": "table",
                                     },
                                     {
                                         "label": "by Measure",
@@ -51,11 +53,11 @@ def get_filter_pane():
                                 options=[
                                     {
                                         "label": "by Report",
-                                        "value": "location",
+                                        "value": "report",
                                     },
                                     {
                                         "label": "by Page",
-                                        "value": "source",
+                                        "value": "page",
                                     },
                                     {
                                         "label": "by Visual",
@@ -91,12 +93,12 @@ def get_filter_pane():
                             ),
                             html.Div(
                                 [
-                                    html.Label("Filter by Location:"),
+                                    html.Label("Filter by Table:"),
                                     dcc.Checklist(
-                                        id="location-filter",
+                                        id="table-filter",
                                         options=[
-                                            {"label": loc, "value": loc}
-                                            for loc in locations
+                                            {"label": loc.title(), "value": loc}
+                                            for loc in tables
                                         ],
                                         inline=True,
                                     ),
@@ -115,11 +117,13 @@ def get_filter_pane():
 
 def serve_layout():
     initial_data = load_data()
-    elements = initial_data["elements"].model_dump()["elements"]
+    model: Nodes = initial_data["model"]
+    elements: dict = Elements.from_model(model).model_dump()["elements"]
+    
 
     return html.Div(
         [
-            dcc.Store(id="initial-data", data=elements, storage_type="memory"),
+            dcc.Store(id="initial-data", data=model.model_dump(exclude_none=True), storage_type="memory"),
             dcc.Store(id="elements", data=elements, storage_type="memory"),
             dcc.Store(id="selected-node", data=None, storage_type="memory"),
             dbc.Row(
@@ -137,6 +141,7 @@ def serve_layout():
                                 "rankSep": 100,
                             },
                             stylesheet=default_stylesheet,
+                            style={"width": "100%", "height": "600px"},
                         ),
                         width=9,
                         style={

@@ -55,13 +55,13 @@ default_stylesheet = [
         },
     },
     {
-        "selector": "node[node_type = 'measure']",
+        "selector": "node[type = 'measure']",
         "style": {
             "background-color": "#636EFA",
         },
     },
     {
-        "selector": "node[node_type = 'visual']",
+        "selector": "node[type = 'visual']",
         "style": {
             "background-color": "#EF553B",
         },
